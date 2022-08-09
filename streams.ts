@@ -100,6 +100,10 @@ async function streamConnect(retryAttempt) {
     () => console.log("Twitter has a keep-alive packet.")
   );
 
+  stream.on("err", (data) => {
+    console.log("ERRRROOOORRRRR", data);
+  });
+
   // Enable reconnect feature
   stream.autoReconnect = true;
 

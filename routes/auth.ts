@@ -3,11 +3,31 @@ import { TwitterApi } from "twitter-api-v2";
 import CONFIG, { requestClient, TOKENS } from "../config";
 import { asyncWrapOrError } from "../utils/helpers";
 
-export const router = Router();
+const router = Router();
 
 router.get(
   "/",
   asyncWrapOrError(async (req, res) => {
+    const { accessToken, accessSecret, userId } = req.session;
+
+    // User Credentials present
+    if (accessToken && accessSecret && userId) {
+      const tempClient = new TwitterApi({
+        ...TOKENS,
+        accessToken,
+        accessSecret,
+      });
+
+      const { data } = await tempClient.currentUserV2();
+
+      return res.render("callback", {
+        accessToken,
+        accessSecret,
+        screenName: data.username,
+        userId,
+      });
+    }
+
     const link = await requestClient.generateAuthLink(
       `http://127.0.0.1:${CONFIG.PORT}/auth`
     );
@@ -16,9 +36,17 @@ router.get(
     req.session.oauthToken = link.oauth_token;
     req.session.oauthSecret = link.oauth_token_secret;
 
-    res.render("index", { authLink: link.url, authMode: "callback" });
+    return res.render("index", { authLink: link.url, authMode: "callback" });
   })
 );
+
+router.get("/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (!err) {
+      return res.send({ status: "success", message: "User Logged out" });
+    }
+  });
+});
 
 router.get(
   "/auth",
@@ -59,8 +87,14 @@ router.get(
     // You can store & use accessToken + accessSecret to create a new client and make API calls!
     req.session.accessToken = accessToken;
     req.session.accessSecret = accessSecret;
+    req.session.userId = userId;
 
-    res.render("callback", { accessToken, accessSecret, screenName, userId });
+    return res.render("callback", {
+      accessToken,
+      accessSecret,
+      screenName,
+      userId,
+    });
   })
 );
 
