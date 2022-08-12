@@ -43,7 +43,7 @@ app.set("view engine", "ejs");
 
 app.use([authRoutes, contactRoutes]);
 
-beginStreaming();
+// beginStreaming();
 
 app.use((err: any, _: Request, res: Response, __: NextFunction) => {
   console.error(err.data);

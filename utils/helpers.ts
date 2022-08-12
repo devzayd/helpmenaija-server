@@ -24,7 +24,7 @@ export const replyTweet = async (tweet: TweetV2SingleResult) => {
     console.log("Repleid a tweet");
 
     await oauth1_0Client.v2.reply(
-      `Welcome to Helpmenaija BOT. Please click on the link below to set up your emergency contact. Click here ${WEBSITE_LINK}`,
+      `Welcome to Helpmenaija BOT. Please click on the link below to set up your emergency contacts. Click here ${WEBSITE_LINK}`,
       tweet.data.id
     );
   } catch (error) {

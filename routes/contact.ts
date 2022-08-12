@@ -19,13 +19,13 @@ router.get(
       });
     }
 
-    const client = new TwitterApi({
+    const userClient = new TwitterApi({
       ...TOKENS,
       accessToken,
       accessSecret,
     });
 
-    const data = await client.v2.followers(userId);
+    const data = await userClient.v2.followers(userId);
 
     return res.status(200).send({
       status: "success",

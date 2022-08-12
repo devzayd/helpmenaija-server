@@ -6,7 +6,7 @@ import { asyncWrapOrError } from "../utils/helpers";
 const router = Router();
 
 router.get(
-  "/",
+  "/login",
   asyncWrapOrError(async (req, res) => {
     const { accessToken, accessSecret, userId } = req.session;
 
