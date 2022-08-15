@@ -1,19 +1,23 @@
 import { TwitterApi, ETwitterStreamEvent } from "twitter-api-v2";
 import CONFIG from "./config";
-import { replyTweet } from "./utils/helpers";
+import {
+  checkIfUserIsRegistered,
+  replyToNewUser,
+  replyToRegisteredUser,
+} from "./utils/helpers";
 
 const BEARER_TOKEN = CONFIG.BEARER_TOKEN;
 
 // Edit rules as desired below
 const rules = [
   {
-    value: "@helpmenaija has:mentions",
+    value: "@helpmenaija has:mentions -is:reply -is:retweet",
     tag: "Helpmenaija mentions",
   },
-  {
-    value: "@helpmenaija",
-    tag: "Helpmenaija",
-  },
+  // {
+  //   value: "@helpmenaija",
+  //   tag: "Helpmenaija",
+  // },
 ];
 
 const streamClient = new TwitterApi(BEARER_TOKEN);
@@ -87,10 +91,20 @@ async function streamConnect(retryAttempt) {
   stream.on(
     // Emitted when a Twitter payload (a tweet or not, given the endpoint).
     ETwitterStreamEvent.Data,
-    (eventData) => {
+    async (eventData) => {
       console.log("Twitter has sent something:", eventData);
 
-      replyTweet(eventData);
+      const { isRegistered, user } = await checkIfUserIsRegistered(
+        eventData.data.author_id
+      );
+
+      if (isRegistered) {
+        // TODO: Begin Flow for returning users
+        console.log("User is Registered. Begin Flow for registered users");
+        replyToRegisteredUser(eventData, user);
+      } else {
+        replyToNewUser(eventData);
+      }
     }
   );
 

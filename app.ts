@@ -4,7 +4,6 @@ import session from "express-session";
 import authRoutes from "./routes/auth";
 import contactRoutes from "./routes/contact";
 import CONFIG from "./config";
-import { initializeDBConnection } from "./data-source";
 import { SessionEntity } from "./entity";
 import { beginStreaming } from "./streams";
 
@@ -21,7 +20,7 @@ declare module "express-session" {
 const app = express();
 
 // DB
-initializeDBConnection();
+// initializeDBConnection();
 // DB
 
 app.use(
@@ -43,7 +42,7 @@ app.set("view engine", "ejs");
 
 app.use([authRoutes, contactRoutes]);
 
-// beginStreaming();
+beginStreaming();
 
 app.use((err: any, _: Request, res: Response, __: NextFunction) => {
   console.error(err.data);
