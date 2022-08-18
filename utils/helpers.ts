@@ -1,7 +1,8 @@
 import type { Request, Response, RequestHandler, NextFunction } from "express";
 import { TweetV2SingleResult, TwitterApi } from "twitter-api-v2";
 import CONFIG, { TOKENS } from "../config";
-import client from "../db";
+
+import prisma from "../lib/prisma-client";
 
 const BEARER_TOKEN = CONFIG.BEARER_TOKEN;
 const WEBSITE_LINK = "https://helpmenaija-client.vercel.app";
@@ -68,35 +69,39 @@ export const replyToNewUser = async (tweet: TweetV2SingleResult) => {
 
 export const checkIfUserIsRegistered = async (
   twitter_user_id: string
-): Promise<{ isRegistered: boolean; user: IUser }> => {
+): Promise<{ isRegistered: boolean; user }> => {
   try {
-    const { rows } = await client.query(
-      "SELECT * FROM users WHERE twitter_user_id = $1",
-      [twitter_user_id]
-    );
+    const users = await prisma.users.findFirst({
+      where: {
+        twitter_user_id,
+      },
+    });
 
-    console.log(rows);
+    console.log(users);
 
-    if (rows.length === 0) {
+    if (!users) {
       return { isRegistered: false, user: null };
     }
 
-    return { isRegistered: true, user: rows[0] as IUser };
+    return { isRegistered: true, user: users };
   } catch (error) {
     console.log(error);
   }
 };
 
-export const getUserEmergencyContact = async (userId: string) => {
+export const getUserEmergencyContact = async (user: any) => {
   try {
-    const { rows } = await client.query(
-      "SELECT * FROM contacts WHERE 'contacts.userId' = $1",
-      [userId]
-    );
+    console.log({ user: user });
 
-    console.log("Emergency Contacts", rows);
+    const contacts = await prisma.contacts.findMany({
+      where: {
+        users: user.id,
+      },
+    });
 
-    return rows as IContact[];
+    console.log("Emergency Contacts", contacts);
+
+    return contacts;
   } catch (error) {
     console.log(error);
   }
@@ -111,7 +116,7 @@ export const replyToRegisteredUser = async (
     const emergencyContacts = await getUserEmergencyContact(user.id);
 
     const requests = emergencyContacts.map((contact) => {
-      const message = `Hello @${contact.username}. @${user.username} just messaged us, they're in an emergency situation. Here's the content of the message sent:
+      const message = `Hello @${contact.username}, @${user.username} just messaged us, they're in an emergency situation. Here's the content of the message sent:
       
       "${tweet.data.text}"
       
@@ -126,7 +131,31 @@ export const replyToRegisteredUser = async (
     });
 
     await Promise.all(requests);
+
+    const MESSAGE_SENT_TO_REGISTERED_USER = `Hello @${user.username}. Sorry to hear about your emergency. A message has already been sent to your emergency contacts to notify them about your situation.`;
+
+    await sendMessageToTwitterUser(
+      user.twitter_user_id,
+      MESSAGE_SENT_TO_REGISTERED_USER
+    );
   } catch (error) {
     console.log(error);
+  }
+};
+
+export const sendConfirmationMessageToVictim = async (user: IUser) => {
+  try {
+    console.log("SENDING_CONFIRMATION_MESSAGE_TO_VICTIM", { userId: user.id });
+
+    const messageToBeSent = `
+    Hello Again @${user.username}, this is just a confirmation message to know if you're still in an emergency. Please respond to this message by answering 'Yes' or 'No' below.
+    `;
+
+    await oauth1_0Client.v1.sendDm({
+      recipient_id: user.twitter_user_id,
+      text: messageToBeSent,
+    });
+  } catch (error) {
+    console.log(error.data);
   }
 };

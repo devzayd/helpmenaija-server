@@ -4,6 +4,7 @@ import {
   checkIfUserIsRegistered,
   replyToNewUser,
   replyToRegisteredUser,
+  sendConfirmationMessageToVictim,
 } from "./utils/helpers";
 
 const BEARER_TOKEN = CONFIG.BEARER_TOKEN;
@@ -71,7 +72,10 @@ async function setRules() {
 }
 
 async function streamConnect(retryAttempt) {
-  const stream = await streamClient.v2.searchStream();
+  const stream = await streamClient.v2.searchStream({
+    expansions: "author_id",
+    "tweet.fields": "geo",
+  });
 
   console.log("Listening to Stream");
 
@@ -102,6 +106,10 @@ async function streamConnect(retryAttempt) {
         // TODO: Begin Flow for returning users
         console.log("User is Registered. Begin Flow for registered users");
         replyToRegisteredUser(eventData, user);
+
+        setTimeout(() => {
+          sendConfirmationMessageToVictim(user);
+        }, 5 * 60 * 1000);
       } else {
         replyToNewUser(eventData);
       }
