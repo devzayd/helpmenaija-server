@@ -1,4 +1,3 @@
-import type { Request, Response, RequestHandler, NextFunction } from "express";
 import { TweetV2SingleResult, TwitterApi } from "twitter-api-v2";
 import CONFIG, { TOKENS } from "../config";
 
@@ -44,14 +43,6 @@ export async function sendMessageToTwitterUser(
     recipient_id: userId,
     text: messageToBeSent,
   });
-}
-
-export function asyncWrapOrError(callback: RequestHandler) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    return Promise.resolve(callback(req, res, next)).catch((err) =>
-      err ? next(err) : next(new Error("Unknown error."))
-    );
-  };
 }
 
 export const replyToNewUser = async (tweet: TweetV2SingleResult) => {
@@ -119,8 +110,6 @@ export const replyToRegisteredUser = async (
       const message = `Hello @${contact.username}, @${user.username} just messaged us, they're in an emergency situation. Here's the content of the message sent:
       
       "${tweet.data.text}"
-      
-      from @${BOT_USERNAME}
       `;
 
       return sendMessageToTwitterUser(contact.twitter_user_id, message).catch(
